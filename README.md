@@ -10,7 +10,7 @@
 
 ###### **Team Lead : Shahzaib Ur Rehman      ph. : 0342-6522787**    
 
-###### Team Member : Noman Uddin           ph. : 0323-7675807
+###### Team Member : Noman Uddin             ph. : 0323-7675807
 
 ###### Team Member : Kalim Ullah           ph. : 0343-0049066
 
@@ -51,7 +51,7 @@
 
 ##### **3.QFH GPT (QashQar Food Hub Ai Assistant)**
 
-* ###### Some shortcut question they answer related to the Procedure of Payment and delivery areas , dishes under 800 and etc. ,    fast foods  , or direct find any dish from any restaurants
+* ###### Some shortcut question they answer related to the Procedure of Payment and delivery areas , dishes under 800  etc. or    fast foods  , or direct find any dish from any restaurants
 * ###### Generate the photoshoot for the food item if restaurant want to generate and also the option for the upload the photoshoot of the item.
 
 
@@ -80,7 +80,22 @@
 
 ---
 
-### 
+### The Pre Setup Emails for the resturent owners and the system admin are mentionoed with the passward - the email are just for test set up to acces the dashboard
+all the resturent owner passward are same for test *12345678*
+admin passward admin001
+
+
+### Names                    Emails                                                *Passwards*
+### Admin :                          shahzaibkhushwaqt6@gmail.com                  admin001
+
+### Mountain Inn Resturent*          mountaininn@gmail.com                          12345678
+### Hindukush Heights                hidukushheights@gmail.com                      12345678
+### New Shinwari Restaurant AtoZ     shinwari@gmail.com                             12345678
+### Fokker Friendship Restaurant     fokkerfriendship@gmail.com                    12345678
+                                                                  
+### Kashmir Restaurant & PizzaHouse   kashmirrph@gmail.com                        12345678
+### Taste Me Fast Food & Cafe           tastemeffc@gmail.com                       12345678
+### CONFLUX Fast Food                     conflux@gmail.com                        12345678
 
 
 
