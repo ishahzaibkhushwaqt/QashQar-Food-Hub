@@ -1,0 +1,219 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── CSS Custom Properties ─────────────────────────────────────────────── */
+:root {
+  --bg:          #f9f5f0;
+  --bg-alt:      #f2ebe0;
+  --surface:     #ffffff;
+  --border:      #e7d9c6;
+  --border-soft: #f0e8da;
+
+  --text-primary:   #1a1208;
+  --text-secondary: #5a4430;
+  --text-muted:     #8b7355;
+
+  --gold:       #c8922a;
+  --gold-light: #e6a93a;
+  --gold-pale:  #fdf3dc;
+}
+
+/* ─── Base ──────────────────────────────────────────────────────────────── */
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  color: var(--text-primary);
+  background: var(--bg);
+  min-height: 100vh;
+  font-family: 'DM Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  letter-spacing: -0.01em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ─── Typography ────────────────────────────────────────────────────────── */
+h1, h2, h3, .font-serif {
+  font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+}
+
+/* ─── Gold Divider (crown ornament) ─────────────────────────────────────── */
+.gold-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+.gold-divider::before,
+.gold-divider::after {
+  content: '';
+  flex: 1;
+  max-width: 4rem;
+  height: 1px;
+  background: linear-gradient(to right, transparent, #c8922a);
+}
+.gold-divider::after {
+  background: linear-gradient(to left, transparent, #c8922a);
+}
+
+/* ─── Hero Split Background ─────────────────────────────────────────────── */
+.bg-hero-cream {
+  background: linear-gradient(105deg, #f9f5f0 0%, #f2ebe0 55%, transparent 100%);
+}
+
+.bg-qashqar-hero {
+  background:
+    linear-gradient(rgba(26, 18, 8, 0.80), rgba(26, 18, 8, 0.85)),
+    url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1600&q=80');
+  background-size: cover;
+  background-position: center;
+}
+
+/* ─── Cards ─────────────────────────────────────────────────────────────── */
+.qfh-card {
+  background: #ffffff;
+  border: 1px solid #e7d9c6;
+  border-radius: 1rem;
+  box-shadow: 0 2px 16px 0 rgba(139, 98, 48, 0.09);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.qfh-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(200, 146, 42, 0.35);
+  box-shadow: 0 8px 40px -4px rgba(139, 98, 48, 0.18);
+}
+
+/* ─── Gold Buttons ──────────────────────────────────────────────────────── */
+.btn-gold {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.75rem;
+  background: #c8922a;
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 0.8125rem;
+  letter-spacing: 0.04em;
+  border-radius: 6px;
+  border: 2px solid #c8922a;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+.btn-gold:hover {
+  background: #a97020;
+  border-color: #a97020;
+}
+
+.btn-outline-gold {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.75rem;
+  background: transparent;
+  color: #1a1208;
+  font-weight: 700;
+  font-size: 0.8125rem;
+  letter-spacing: 0.04em;
+  border-radius: 6px;
+  border: 2px solid #1a1208;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+.btn-outline-gold:hover {
+  background: #1a1208;
+  color: #ffffff;
+}
+
+/* ─── Category Circles ──────────────────────────────────────────────────── */
+.category-circle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.625rem;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+.category-circle:hover {
+  transform: translateY(-4px);
+}
+.category-circle .ring {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  padding: 3px;
+  background: white;
+  box-shadow: 0 4px 16px rgba(139, 98, 48, 0.12);
+  transition: all 0.2s ease;
+  overflow: hidden;
+}
+.category-circle.active .ring,
+.category-circle:hover .ring {
+  border-color: #c8922a;
+  box-shadow: 0 4px 20px rgba(200, 146, 42, 0.3);
+}
+.category-circle img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+/* ─── Section Label (EXPERIENCE FINE DINING style) ─────────────────────── */
+.section-eyebrow {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #c8922a;
+}
+
+/* ─── Scrollbar ─────────────────────────────────────────────────────────── */
+::-webkit-scrollbar          { width: 6px; height: 6px; }
+::-webkit-scrollbar-track    { background: #f2ebe0; }
+::-webkit-scrollbar-thumb    { background: #d5c2a1; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #c8922a; }
+
+.scrollbar-none::-webkit-scrollbar { display: none; }
+.scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ─── Animations ─────────────────────────────────────────────────────────── */
+@keyframes fadeIn  { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes float   { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+@keyframes shimmer { from { background-position: -200% 0; } to { background-position: 200% 0; } }
+
+.animate-fade-in  { animation: fadeIn 0.45s ease-out both; }
+.animate-slide-up { animation: slideUp 0.45s ease-out both; }
+.animate-float    { animation: float 4s ease-in-out infinite; }
+
+/* ─── Tag Badge ─────────────────────────────────────────────────────────── */
+.badge-gold {
+  background: #fdf3dc;
+  color: #8b5e1a;
+  border: 1px solid #e6c06a;
+  padding: 0.15rem 0.55rem;
+  border-radius: 4px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* ─── Promo Section ─────────────────────────────────────────────────────── */
+.bg-promo {
+  background: linear-gradient(rgba(10, 7, 3, 0.8), rgba(10, 7, 3, 0.85)),
+    url('https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=1600&q=80');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+}
