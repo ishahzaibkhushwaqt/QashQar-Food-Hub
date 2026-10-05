@@ -12,7 +12,7 @@ import {
   Zap,
   Clock
 } from 'lucide-react';
-
+import { io } from 'socket.io-client';
 export default function LiveTrackingMap({ 
   order, 
   socket,
@@ -218,9 +218,12 @@ export default function LiveTrackingMap({
     return () => clearInterval(interval);
   }, [order, restLat, restLng, custLat, custLng]);
 
+const socketRef = useRef(socket || (typeof window !== 'undefined' ? io() : null));
+
   // Socket listener for real-time driver updates from server
   useEffect(() => {
-    if (!socket) return;
+    const activeSocket = socketRef.current;
+    if (!activeSocket) return;
 
     const handleDriverLoc = (data) => {
       if (data.lat && data.lng) {
@@ -232,11 +235,11 @@ export default function LiveTrackingMap({
       }
     };
 
-    socket.on('driver:location_update', handleDriverLoc);
+    activeSocket.on('driver:location_update', handleDriverLoc);
     return () => {
-      socket.off('driver:location_update', handleDriverLoc);
+      activeSocket.off('driver:location_update', handleDriverLoc);
     };
-  }, [socket]);
+  }, [socketRef]);
 
   const recenterOnRider = () => {
     if (mapInstanceRef.current && riderPos) {
