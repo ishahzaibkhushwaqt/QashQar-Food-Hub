@@ -1,3 +1,8 @@
+const dns = require('dns');
+try {
+  dns.setDefaultResultOrder('ipv4first');
+} catch (e) {}
+
 const http = require('http');
 const next = require('next');
 const { Server } = require('socket.io');

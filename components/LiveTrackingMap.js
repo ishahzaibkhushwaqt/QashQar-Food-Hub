@@ -10,9 +10,42 @@ import {
   Phone,
   ShieldCheck,
   Zap,
-  Clock
+  Clock,
+  Layers
 } from 'lucide-react';
 import { io } from 'socket.io-client';
+
+// Google Maps Tile Layer Configurations (Zero watermark, high resolution, ultra reliable)
+const GOOGLE_MAP_LAYERS = {
+  google_streets: {
+    id: 'google_streets',
+    label: 'Google Maps',
+    icon: '🗺️',
+    url: 'https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',
+    subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+    maxZoom: 20,
+    attribution: '&copy; Google Maps',
+  },
+  google_terrain: {
+    id: 'google_terrain',
+    label: 'Chitral Terrain',
+    icon: '🏔️',
+    url: 'https://{s}.google.com/vt/lyrs=p&x={x}&y={y}&z={z}',
+    subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+    maxZoom: 20,
+    attribution: '&copy; Google Maps (Chitral Valley Terrain)',
+  },
+  google_satellite: {
+    id: 'google_satellite',
+    label: 'Satellite',
+    icon: '🛰️',
+    url: 'https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
+    subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+    maxZoom: 20,
+    attribution: '&copy; Google Maps Satellite',
+  },
+};
+
 export default function LiveTrackingMap({ 
   order, 
   socket,
@@ -22,6 +55,9 @@ export default function LiveTrackingMap({
   const mapInstanceRef = useRef(null);
   const riderMarkerRef = useRef(null);
   const routePolylineRef = useRef(null);
+  const activeTileLayerRef = useRef(null);
+
+  const [activeLayer, setActiveLayer] = useState('google_streets');
 
   // Default Chitral Town Center coordinates
   const defaultRestaurantCoord = [35.8520, 71.7850];
@@ -48,7 +84,7 @@ export default function LiveTrackingMap({
     setIsClient(true);
   }, []);
 
-  // Initialize Leaflet Map
+  // Initialize Map with Google Maps Tiles
   useEffect(() => {
     if (!isClient || !mapContainerRef.current) return;
 
@@ -75,11 +111,15 @@ export default function LiveTrackingMap({
           zoomControl: false,
         });
 
-        // Add clean street tiles (CartoDB Positron / OSM clean)
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-          attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
-          maxZoom: 19,
+        // Add Google Maps Tiles (Replaces deprecated Carto layer with clean, watermark-free Google tiles)
+        const cfg = GOOGLE_MAP_LAYERS[activeLayer] || GOOGLE_MAP_LAYERS.google_streets;
+        const googleLayer = L.tileLayer(cfg.url, {
+          subdomains: cfg.subdomains,
+          maxZoom: cfg.maxZoom,
+          attribution: cfg.attribution,
         }).addTo(map);
+
+        activeTileLayerRef.current = googleLayer;
 
         L.control.zoom({ position: 'bottomright' }).addTo(map);
 
@@ -158,7 +198,7 @@ export default function LiveTrackingMap({
         const routeLine = L.polyline(routeCoords, {
           color: '#0284c7',
           weight: 5,
-          opacity: 0.85,
+          opacity: 0.9,
           dashArray: '8, 8',
           lineCap: 'round',
         }).addTo(map);
@@ -182,6 +222,31 @@ export default function LiveTrackingMap({
       }
     };
   }, [isClient, restLat, restLng, custLat, custLng]);
+
+  // Switch between Google Maps Streets, Mountain Terrain, and Satellite
+  const switchGoogleMapLayer = async (layerKey) => {
+    if (activeLayer === layerKey) return;
+    setActiveLayer(layerKey);
+
+    if (!mapInstanceRef.current) return;
+    try {
+      const L = (await import('leaflet')).default;
+      if (activeTileLayerRef.current) {
+        mapInstanceRef.current.removeLayer(activeTileLayerRef.current);
+      }
+      const cfg = GOOGLE_MAP_LAYERS[layerKey];
+      const newLayer = L.tileLayer(cfg.url, {
+        subdomains: cfg.subdomains,
+        maxZoom: cfg.maxZoom,
+        attribution: cfg.attribution,
+      }).addTo(mapInstanceRef.current);
+
+      activeTileLayerRef.current = newLayer;
+      newLayer.bringToBack();
+    } catch (e) {
+      console.error('Error switching Google Map layer:', e);
+    }
+  };
 
   // Live real-time Rider movement simulation along route
   useEffect(() => {
@@ -218,7 +283,7 @@ export default function LiveTrackingMap({
     return () => clearInterval(interval);
   }, [order, restLat, restLng, custLat, custLng]);
 
-const socketRef = useRef(socket || (typeof window !== 'undefined' ? io() : null));
+  const socketRef = useRef(socket || (typeof window !== 'undefined' ? io() : null));
 
   // Socket listener for real-time driver updates from server
   useEffect(() => {
@@ -271,7 +336,7 @@ const socketRef = useRef(socket || (typeof window !== 'undefined' ? io() : null)
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
               <span className="text-[10px] font-black uppercase tracking-wider text-sky-400">
-                {t('liveTrackingTitle')} • Chitral Valley GPS
+                {t('liveTrackingTitle')} • Google Maps GPS Live
               </span>
             </div>
             <h3 className="font-extrabold text-base text-white mt-0.5">
@@ -311,29 +376,52 @@ const socketRef = useRef(socket || (typeof window !== 'undefined' ? io() : null)
         {/* Leaflet DOM container */}
         <div ref={mapContainerRef} className="w-full h-full z-0" />
 
-        {/* Floating Uber-style Map Floating Controls */}
-        <div className="absolute top-4 right-4 z-10 flex flex-col gap-2">
-          <button
-            onClick={recenterOnRider}
-            className="p-2.5 bg-white hover:bg-slate-50 text-slate-800 rounded-xl shadow-lg border border-slate-200 text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95"
-            title="Recenter on Rider"
-          >
-            <Crosshair className="w-4 h-4 text-sky-600" />
-            <span className="hidden sm:inline">{t('recenterMap')}</span>
-          </button>
+        {/* Floating Google Map Layer Selector & Uber-style Controls */}
+        <div className="absolute top-4 right-4 z-10 flex flex-col items-end gap-2">
+          
+          {/* Google Maps Layer Switcher Pill */}
+          <div className="bg-white/95 backdrop-blur-md p-1 rounded-2xl shadow-lg border border-slate-200/80 flex items-center gap-1">
+            {Object.values(GOOGLE_MAP_LAYERS).map((layer) => (
+              <button
+                key={layer.id}
+                onClick={() => switchGoogleMapLayer(layer.id)}
+                className={`px-2.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${
+                  activeLayer === layer.id
+                    ? 'bg-sky-600 text-white shadow-sm scale-100'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                }`}
+                title={layer.label}
+              >
+                <span>{layer.icon}</span>
+                <span className="hidden sm:inline">{layer.label}</span>
+              </button>
+            ))}
+          </div>
 
-          <button
-            onClick={fitFullRoute}
-            className="p-2.5 bg-white hover:bg-slate-50 text-slate-800 rounded-xl shadow-lg border border-slate-200 text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95"
-            title="Fit Full Route"
-          >
-            <Maximize2 className="w-4 h-4 text-slate-700" />
-            <span className="hidden sm:inline">Route</span>
-          </button>
+          {/* Action buttons (Recenter & Route) */}
+          <div className="flex gap-2">
+            <button
+              onClick={recenterOnRider}
+              className="px-3 py-2 bg-white hover:bg-slate-50 text-slate-800 rounded-xl shadow-lg border border-slate-200 text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95"
+              title="Recenter on Rider"
+            >
+              <Crosshair className="w-4 h-4 text-sky-600" />
+              <span className="hidden sm:inline">{t('recenterMap')}</span>
+            </button>
+
+            <button
+              onClick={fitFullRoute}
+              className="px-3 py-2 bg-white hover:bg-slate-50 text-slate-800 rounded-xl shadow-lg border border-slate-200 text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95"
+              title="Fit Full Route"
+            >
+              <Maximize2 className="w-4 h-4 text-slate-700" />
+              <span className="hidden sm:inline">Full Route</span>
+            </button>
+          </div>
         </div>
 
         {/* Legend Banner on bottom-left of map */}
-        <div className="absolute bottom-4 left-4 z-10 bg-white/95 backdrop-blur-md px-3.5 py-2 rounded-2xl border border-slate-200 shadow-lg text-[11px] font-bold text-slate-800 flex items-center gap-4">
+        <div className="absolute bottom-4 left-4 z-10 bg-white/95 backdrop-blur-md px-3.5 py-2 rounded-2xl border border-slate-200 shadow-lg text-[11px] font-bold text-slate-800 flex items-center gap-3.5">
           <div className="flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
             <span>{order?.restaurantId?.name?.slice(0, 16) || 'Restaurant'}</span>

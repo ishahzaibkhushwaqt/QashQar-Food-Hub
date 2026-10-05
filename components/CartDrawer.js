@@ -87,6 +87,7 @@ export default function CartDrawer() {
           body: JSON.stringify({
             cartItems: cart,
             restaurantId: cartRestaurant._id,
+            orderTotal: subtotal,
           }),
         });
         const data = await res.json();

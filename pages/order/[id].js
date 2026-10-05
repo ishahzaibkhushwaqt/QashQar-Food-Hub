@@ -42,6 +42,8 @@ export default function OrderTrackingPage() {
 
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [aiSuggestions, setAiSuggestions] = useState([]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -79,6 +81,39 @@ export default function OrderTrackingPage() {
       };
     }
   }, [id, socket]);
+
+  // Fetch AI recommendations related to this placed order's items, price, and restaurant
+  useEffect(() => {
+    if (!order?.items?.length) return;
+
+    const restId = order.restaurantId?._id || order.restaurantId;
+    if (!restId) return;
+
+    async function loadOrderAiSuggestions() {
+      setLoadingSuggestions(true);
+      try {
+        const res = await fetch('/api/ai/recommend', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            cartItems: order.items,
+            restaurantId: restId,
+            orderTotal: order.totalAmount || order.subtotal,
+          }),
+        });
+        const data = await res.json();
+        if (data.success && data.recommendations) {
+          setAiSuggestions(data.recommendations);
+        }
+      } catch (err) {
+        console.warn('AI suggestions error on order page:', err);
+      } finally {
+        setLoadingSuggestions(false);
+      }
+    }
+
+    loadOrderAiSuggestions();
+  }, [order?._id]);
 
   if (loading) {
     return (
@@ -226,6 +261,80 @@ export default function OrderTrackingPage() {
       <div className="mb-8">
         <LiveTrackingMap order={order} socket={socket} t={t} />
       </div>
+
+      {/* ── GEMINI AI RECOMMENDATIONS FOR THIS ORDER & RESTAURANT ── */}
+      {aiSuggestions.length > 0 && (
+        <div className="mb-8 p-6 bg-gradient-to-br from-amber-50/90 via-white to-emerald-50/90 rounded-3xl border border-amber-200/90 shadow-md">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-amber-100">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-500 to-amber-400 text-slate-950 flex items-center justify-center font-bold text-lg shadow-xs">
+                🤖
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-black text-base text-slate-900">
+                    Gemini AI Recommended Pairings
+                  </h3>
+                  <span className="text-[10px] uppercase font-black tracking-wider px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                    Live AI
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Complementary dishes matching your order (Rs. {order.totalAmount}) from <b className="text-slate-800">{order.restaurantId?.name || 'this restaurant'}</b>
+                </p>
+              </div>
+            </div>
+
+            <Link
+              href={`/restaurant/${order.restaurantId?._id || order.restaurantId}`}
+              className="text-xs font-bold text-emerald-700 hover:text-emerald-800 self-start sm:self-auto flex items-center gap-1 transition-colors"
+            >
+              <span>Browse Full Menu</span>
+              <span>&rarr;</span>
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {aiSuggestions.map((rec, idx) => (
+              <div
+                key={rec.item?._id || idx}
+                className="bg-white rounded-2xl border border-slate-200/80 p-4.5 shadow-xs flex flex-col justify-between hover:shadow-md transition-all group"
+              >
+                <div>
+                  <div className="flex items-center justify-between gap-2 mb-2.5">
+                    <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-amber-100 text-amber-900">
+                      {rec.badge}
+                    </span>
+                    <span className="font-extrabold text-sm text-emerald-800">
+                      Rs. {rec.item?.price}
+                    </span>
+                  </div>
+
+                  <h4 className="font-bold text-sm text-slate-900 mb-1 line-clamp-1 group-hover:text-emerald-700 transition-colors">
+                    {rec.item?.name}
+                  </h4>
+
+                  <p className="text-xs text-slate-500 leading-relaxed mb-3">
+                    {rec.reasoning}
+                  </p>
+                </div>
+
+                <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+                  <span className="text-[11px] text-slate-400 font-medium">
+                    {rec.item?.category || 'Specialty'}
+                  </span>
+                  <Link
+                    href={`/restaurant/${order.restaurantId?._id || order.restaurantId}`}
+                    className="px-3 py-1.5 bg-slate-900 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl text-center transition-colors shadow-xs"
+                  >
+                    View Dish
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Order Details & Summary Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

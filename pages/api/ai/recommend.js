@@ -1,13 +1,13 @@
 /**
  * /pages/api/ai/recommend.js
  *
- * Cart recommendation endpoint — now powered by Gemini AI.
- * Calls generateCartRecommendationsAI() which uses Gemini first,
- * then gracefully falls back to the rule-based engine if unavailable.
+ * Cart & Post-Order recommendation endpoint — powered by Gemini AI.
+ * Grounded in the specific restaurant's menu, items, and the customer's order price.
  */
 
 import connectDB from '../../../lib/db.js';
 import MenuItem from '../../../models/MenuItem.js';
+import Restaurant from '../../../models/Restaurant.js';
 import { generateCartRecommendationsAI } from '../../../lib/aiRecommendation.js';
 
 export default async function handler(req, res) {
@@ -17,23 +17,36 @@ export default async function handler(req, res) {
 
   try {
     await connectDB();
-    const { cartItems = [], restaurantId } = req.body;
+    const { cartItems = [], restaurantId, orderTotal = null } = req.body;
 
     if (!restaurantId || cartItems.length === 0) {
       return res.status(200).json({ success: true, recommendations: [] });
     }
 
-    const availableMenuItems = await MenuItem.find({
-      restaurantId,
-      isAvailable: true,
-    }).lean();
+    // Fetch restaurant name & details for accurate AI grounding
+    const [restaurant, availableMenuItems] = await Promise.all([
+      Restaurant.findById(restaurantId).select('name locality category').lean(),
+      MenuItem.find({
+        restaurantId,
+        isAvailable: true,
+      }).lean(),
+    ]);
 
-    // Use Gemini AI recommendations with rule-based fallback
-    const recommendations = await generateCartRecommendationsAI(cartItems, availableMenuItems);
+    const restaurantName = restaurant?.name || 'Local Kitchen';
+
+    // Use Gemini AI recommendations with price & restaurant awareness
+    const recommendations = await generateCartRecommendationsAI(cartItems, availableMenuItems, {
+      restaurantName,
+      orderTotal,
+    });
 
     return res.status(200).json({
       success: true,
       count: recommendations.length,
+      restaurant: {
+        _id: restaurantId,
+        name: restaurantName,
+      },
       recommendations,
       aiPowered: !!process.env.GEMINI_API_KEY,
     });

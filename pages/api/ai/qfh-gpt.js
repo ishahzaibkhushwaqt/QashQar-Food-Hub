@@ -17,6 +17,11 @@
  * 10. Proper error handling.
  */
 
+import dns from 'dns';
+try {
+  dns.setDefaultResultOrder('ipv4first');
+} catch (e) {}
+
 import { GoogleGenAI } from '@google/genai';
 import connectDB from '../../../lib/db.js';
 import MenuItem from '../../../models/MenuItem.js';
@@ -185,15 +190,41 @@ ${menuContext || 'No available menu items found.'}
     // 4. Initialize GoogleGenAI client and call the real LLM
     const ai = new GoogleGenAI({ apiKey });
 
-    const response = await ai.models.generateContent({
-      model: modelName,
-      contents,
-      config: {
-        systemInstruction,
-        temperature: 0.4,
-        maxOutputTokens: 600,
-      },
-    });
+    let response;
+    let usedModel = modelName;
+
+    try {
+      response = await ai.models.generateContent({
+        model: modelName,
+        contents,
+        config: {
+          systemInstruction,
+          temperature: 0.4,
+          maxOutputTokens: 600,
+        },
+      });
+    } catch (primaryErr) {
+      // If primary model encounters high demand (Google 503), immediately failover to high-throughput gemini-3.5-flash-lite
+      if (
+        primaryErr.message?.includes('503') ||
+        primaryErr.message?.includes('high demand') ||
+        primaryErr.message?.includes('UNAVAILABLE')
+      ) {
+        console.warn(`[QFH GPT] ${modelName} 503 spike, switching to gemini-3.5-flash-lite failover...`);
+        usedModel = 'gemini-3.5-flash-lite';
+        response = await ai.models.generateContent({
+          model: 'gemini-3.5-flash-lite',
+          contents,
+          config: {
+            systemInstruction,
+            temperature: 0.4,
+            maxOutputTokens: 600,
+          },
+        });
+      } else {
+        throw primaryErr;
+      }
+    }
 
     const aiText = response.text?.trim();
 
